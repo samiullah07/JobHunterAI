@@ -1,0 +1,16 @@
+"""Generic repository Protocol — the contract all repositories must satisfy."""
+
+import uuid
+from collections.abc import Sequence
+from typing import Protocol, TypeVar, runtime_checkable
+
+T = TypeVar("T")
+
+
+@runtime_checkable
+class Repository(Protocol[T]):
+    async def add(self, entity: T) -> T: ...
+    async def get(self, id: uuid.UUID) -> T | None: ...
+    async def list(self, *, limit: int = 100, offset: int = 0) -> Sequence[T]: ...
+    async def update(self, entity: T) -> T: ...
+    async def delete(self, id: uuid.UUID) -> None: ...

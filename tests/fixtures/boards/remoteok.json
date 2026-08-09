@@ -1,0 +1,29 @@
+[
+  {"legal": "https://remoteok.com/legal"},
+  {
+    "id": "101001",
+    "position": "Python Developer",
+    "company": "RemoteTech",
+    "location": "Worldwide",
+    "description": "Build awesome Python services.",
+    "url": "https://remoteok.com/l/101001",
+    "date": "2025-03-15T10:00:00",
+    "salary_min": 80000,
+    "salary_max": 120000,
+    "tags": ["python", "backend"]
+  },
+  {
+    "id": "101002",
+    "position": "DevOps Engineer",
+    "company": "CloudInc",
+    "description": "Manage cloud infrastructure.",
+    "url": "https://remoteok.com/l/101002",
+    "date": "2025-03-14T08:30:00",
+    "tags": ["devops", "aws"]
+  },
+  {
+    "id": "",
+    "position": "Malformed",
+    "company": "Bad"
+  }
+]

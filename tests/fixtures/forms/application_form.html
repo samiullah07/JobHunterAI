@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Job Application — TechCo Backend Developer</title>
+<style>
+body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; }
+fieldset { border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; }
+legend { font-weight: bold; font-size: 1.1em; }
+label { display: block; margin-top: 12px; font-weight: 600; }
+input, select, textarea { display: block; width: 100%; margin-top: 4px; padding: 6px; box-sizing: border-box; }
+input[type="checkbox"], input[type="radio"] { display: inline; width: auto; margin-right: 6px; }
+.radio-group label, .checkbox-group label { display: inline-block; margin-right: 16px; font-weight: normal; }
+button { margin-top: 16px; padding: 10px 24px; cursor: pointer; }
+.page { display: none; }
+.page.active { display: block; }
+.required::after { content: " *"; color: red; }
+</style>
+</head>
+<body>
+<h1>Apply: Backend Developer at TechCo</h1>
+<form id="application-form" onsubmit="return false;">
+
+<!-- Page 1: Personal Info -->
+<div class="page active" id="page-1">
+<fieldset>
+<legend>Personal Information</legend>
+
+<label for="full-name" class="required">Full Name</label>
+<input type="text" id="full-name" name="full_name" required placeholder="Your full name">
+
+<label for="email" class="required">Email Address</label>
+<input type="email" id="email" name="email" required placeholder="you@example.com">
+
+<label for="phone">Phone Number</label>
+<input type="tel" id="phone" name="phone" placeholder="555-0100">
+
+<label for="cover-letter-text">Why are you interested in this role?</label>
+<textarea id="cover-letter-text" name="cover_letter_text" rows="5" placeholder="Tell us why..."></textarea>
+
+<label for="experience">Years of Experience</label>
+<select id="experience" name="years_experience" required>
+  <option value="">-- Select --</option>
+  <option value="0-2">0-2 years</option>
+  <option value="3-5">3-5 years</option>
+  <option value="5-10">5-10 years</option>
+  <option value="10+">10+ years</option>
+</select>
+
+<label class="required">Work Authorization</label>
+<div class="radio-group">
+  <label><input type="radio" name="work_auth" value="yes" required> Yes</label>
+  <label><input type="radio" name="work_auth" value="no"> No</label>
+</div>
+
+<label for="available-date">Available Start Date</label>
+<input type="date" id="available-date" name="available_date">
+
+</fieldset>
+<button type="button" id="next-btn" onclick="showPage2()">Next</button>
+</div>
+
+<!-- Page 2: Skills & Uploads -->
+<div class="page" id="page-2">
+<fieldset>
+<legend>Skills & Documents</legend>
+
+<label>Skills (check all that apply)</label>
+<div class="checkbox-group">
+  <label><input type="checkbox" name="skills" value="python"> Python</label>
+  <label><input type="checkbox" name="skills" value="javascript"> JavaScript</label>
+  <label><input type="checkbox" name="skills" value="docker"> Docker</label>
+  <label><input type="checkbox" name="skills" value="kubernetes"> Kubernetes</label>
+</div>
+
+<label><input type="checkbox" name="relocate" value="yes"> Willing to relocate</label>
+
+<label for="resume-upload" class="required">Upload Resume (PDF)</label>
+<input type="file" id="resume-upload" name="resume" accept=".pdf,.docx" required>
+
+<label for="cover-letter-upload">Upload Cover Letter (PDF)</label>
+<input type="file" id="cover-letter-upload" name="cover_letter_file" accept=".pdf,.docx">
+
+</fieldset>
+<button type="button" onclick="showPage1()">Back</button>
+<button type="submit" id="submit-btn" onclick="handleSubmit()">Submit Application</button>
+</div>
+
+</form>
+
+<script>
+function showPage2() {
+  document.getElementById('page-1').classList.remove('active');
+  document.getElementById('page-2').classList.add('active');
+}
+function showPage1() {
+  document.getElementById('page-2').classList.remove('active');
+  document.getElementById('page-1').classList.add('active');
+}
+function handleSubmit() {
+  window.__SUBMITTED__ = true;
+}
+</script>
+</body>
+</html>

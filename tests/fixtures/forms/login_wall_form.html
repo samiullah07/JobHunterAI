@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Login Required — Application Portal</title>
+</head>
+<body>
+<h1>Sign In to Apply</h1>
+<form id="login-form">
+<label for="username">Username</label>
+<input type="text" id="username" name="username" required>
+<label for="password">Password</label>
+<input type="password" id="password" name="password" required>
+<button type="submit">Log In</button>
+</form>
+<div class="g-recaptcha" data-sitekey="fake-key"></div>
+<script>
+function handleSubmit() { window.__SUBMITTED__ = true; }
+</script>
+</body>
+</html>

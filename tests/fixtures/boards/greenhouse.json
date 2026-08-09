@@ -1,0 +1,24 @@
+{
+  "jobs": [
+    {
+      "id": 4012345,
+      "title": "Senior Backend Engineer",
+      "location": {"name": "San Francisco, CA"},
+      "content": "<p>We are looking for a senior backend engineer...</p>",
+      "company": {"name": "Acme Corp"}
+    },
+    {
+      "id": 4012346,
+      "title": "Frontend Developer",
+      "location": {"name": "Remote - US"},
+      "content": "<p>Join our frontend team.</p>",
+      "company": {"name": "Acme Corp"}
+    },
+    {
+      "id": null,
+      "title": null,
+      "location": null,
+      "content": null
+    }
+  ]
+}

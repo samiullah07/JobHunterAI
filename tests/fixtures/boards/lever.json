@@ -1,0 +1,30 @@
+[
+  {
+    "id": "abc-def-123",
+    "text": "Staff Engineer, Platform",
+    "hostedUrl": "https://jobs.lever.co/example/abc-def-123",
+    "applyUrl": "https://jobs.lever.co/example/abc-def-123/apply",
+    "company": "ExampleCo",
+    "categories": {
+      "location": "New York, NY",
+      "commitment": "Full-time",
+      "team": "Engineering"
+    },
+    "descriptionPlain": "We need a staff engineer to build platform services.",
+    "description": "<div>We need a staff engineer to build platform services.</div>"
+  },
+  {
+    "id": "xyz-789-456",
+    "text": "Product Designer",
+    "hostedUrl": "https://jobs.lever.co/example/xyz-789-456",
+    "company": "ExampleCo",
+    "categories": {
+      "location": "Remote",
+      "commitment": "Contract"
+    },
+    "descriptionPlain": "Design product experiences for our users."
+  },
+  {
+    "text": "Malformed Entry Without ID"
+  }
+]
