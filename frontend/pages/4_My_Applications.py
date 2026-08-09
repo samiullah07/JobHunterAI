@@ -3,6 +3,8 @@ import streamlit as st
 import asyncio
 import json
 
+from jobhunter.adapters.rendering.pdf_resume import generate_resume_pdf
+
 
 def _run_async(coro):
     loop = asyncio.new_event_loop()
@@ -99,6 +101,16 @@ else:
                         file_name=f"resume_{app['company'].replace(' ', '_')}.json",
                         mime="application/json",
                         key=f"dl_resume_{app['id']}",
+                    )
+
+                    # Add PDF download button
+                    pdf_bytes = generate_resume_pdf(r)
+                    st.download_button(
+                        "Download Resume (PDF)",
+                        pdf_bytes,
+                        file_name=f"resume_{app['company'].replace(' ', '_')}.pdf",
+                        mime="application/pdf",
+                        key=f"dl_pdf_{app['id']}",
                     )
                 else:
                     st.write("No resume data available.")

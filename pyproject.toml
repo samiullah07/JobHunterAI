@@ -28,6 +28,8 @@ dependencies = [
   "pypdf>=5.0",
   "pgvector>=0.3",
   "pydantic[email]>=2.11",
+  "weasyprint>=69.0",
+  "reportlab>=5.0.0",
 ]
 
 [project.optional-dependencies]
