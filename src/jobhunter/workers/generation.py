@@ -52,7 +52,7 @@ async def generate_for_top_matches(limit: int = 3):
     cover_gen = LlmCoverLetterGenerator(llm_client=llm)
 
     async with unit_of_work() as session:
-        # 1. Get top N matches (highest overall score, filtered to passed prefilter)
+        # 1. Try match_scores first; fall back to newest jobs if no scores exist
         result = await session.execute(
             select(MatchScore)
             .where(MatchScore.passed_prefilter == True)  # noqa: E712
@@ -62,9 +62,36 @@ async def generate_for_top_matches(limit: int = 3):
         matches = result.scalars().all()
         logger.info("top_matches_fetched", count=len(matches))
 
+        # Build list of (job, profile) pairs to generate for
+        job_profile_pairs = []
+        if matches:
+            for match in matches:
+                j = await session.get(Job, match.job_id)
+                job_profile_pairs.append((j, match.profile_id))
+        else:
+            # Fallback: pick newest jobs that don't already have a resume
+            logger.info("no_match_scores_found", fallback="newest_jobs")
+            from sqlalchemy import and_, exists
+            has_resume = exists(
+                select(ResumeVersion.id).where(ResumeVersion.job_id == Job.id)
+            )
+            fallback_result = await session.execute(
+                select(Job)
+                .where(~has_resume)
+                .order_by(Job.created_at.desc())
+                .limit(limit)
+            )
+            fallback_jobs = fallback_result.scalars().all()
+            # Get the single active profile
+            p_result = await session.execute(select(UserProfile.id).limit(1))
+            p_id = p_result.scalar_one_or_none()
+            if p_id and fallback_jobs:
+                for j in fallback_jobs:
+                    job_profile_pairs.append((j, p_id))
+            logger.info("fallback_jobs_selected", count=len(job_profile_pairs))
+
         generated = 0
-        for match in matches:
-            job = await session.get(Job, match.job_id)
+        for job, profile_id in job_profile_pairs:
             # Eagerly load profile with all relationships accessed by LLM generator to avoid lazy-load errors
             profile = await session.execute(
                 select(UserProfile)
@@ -75,7 +102,7 @@ async def generate_for_top_matches(limit: int = 3):
                     selectinload(UserProfile.projects),
                     selectinload(UserProfile.certifications)
                 )
-                .where(UserProfile.id == match.profile_id)
+                .where(UserProfile.id == profile_id)
             )
             profile = profile.scalar_one_or_none()
 

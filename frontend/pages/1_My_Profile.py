@@ -1,6 +1,7 @@
 """Streamlit profile entry form — single active profile, swappable."""
 import streamlit as st
 import asyncio
+import json
 from datetime import date
 
 # Session state for repeatable lists

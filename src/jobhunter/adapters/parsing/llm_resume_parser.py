@@ -135,6 +135,9 @@ def _normalize_parsed_fields(raw: dict) -> dict:
             if key in d:
                 d["educations"] = d.pop(key)
                 break
+    # Wrap single education dict in a list
+    if "educations" in d and isinstance(d["educations"], dict):
+        d["educations"] = [d["educations"]]
     if "educations" in d and isinstance(d["educations"], list):
         for edu in d["educations"]:
             if isinstance(edu, dict):
