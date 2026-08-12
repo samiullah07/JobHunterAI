@@ -22,7 +22,7 @@ async def parse_and_save_cv(file_bytes, filename):
     from jobhunter.infrastructure.db.unit_of_work import unit_of_work
     from jobhunter.infrastructure.db.models import (
         UserProfile, Skill, WorkExperience, Education,
-        Application, MatchScore, ResumeVersion, CoverLetterVersion,
+        Application, MatchScore, ResumeVersion, CoverLetterVersion, Project,
     )
     from jobhunter.config import get_settings
     from jobhunter.adapters.llm.groq_client import GroqLlmClient, UsageTracker
@@ -69,6 +69,7 @@ async def parse_and_save_cv(file_bytes, filename):
             await session.execute(delete(Skill).where(Skill.profile_id == pid))
             await session.execute(delete(WorkExperience).where(WorkExperience.profile_id == pid))
             await session.execute(delete(Education).where(Education.profile_id == pid))
+            await session.execute(delete(Project).where(Project.profile_id == pid))
         await session.execute(delete(UserProfile))
         await session.flush()
 
@@ -170,8 +171,37 @@ async def parse_and_save_cv(file_bytes, filename):
                     gpa=edu.gpa if hasattr(edu, 'gpa') else None,
                 ))
 
+        # Insert projects
+        import logging
+        open("_proj_debug.txt", "w").write(f"projects type={type(parsed.projects)}\nlen={len(parsed.projects) if parsed.projects else 0}\nvalue={str(parsed.projects)[:1000]}")
+        logging.warning(f"PROJECTS DEBUG: type={type(parsed.projects)}, value={str(parsed.projects)[:500]}")
+        proj_count = 0
+        if parsed.projects:
+            for proj in parsed.projects:
+                # Handle both dict and Pydantic model objects
+                if isinstance(proj, dict):
+                    p_name = proj.get('name') or proj.get('title') or 'Unnamed Project'
+                    p_url = proj.get('url') or proj.get('github') or None
+                    p_desc = proj.get('description') or None
+                    p_tech = proj.get('technologies') or None
+                else:
+                    p_name = getattr(proj, 'name', None) or getattr(proj, 'title', None) or 'Unnamed Project'
+                    p_url = getattr(proj, 'url', None) or getattr(proj, 'github', None) or None
+                    p_desc = getattr(proj, 'description', None)
+                    p_tech = getattr(proj, 'technologies', None)
+                if p_url and not str(p_url).startswith('http'):
+                    p_url = 'https://' + str(p_url)
+                session.add(Project(
+                    profile_id=profile.id,
+                    name=str(p_name)[:300],
+                    description=p_desc,
+                    url=p_url,
+                    technologies=p_tech if isinstance(p_tech, list) else None,
+                ))
+                proj_count += 1
+
         await session.flush()
-        return {"full_name": parsed.full_name, "skills_count": skills_count, "exp_count": exp_count}
+        return {"full_name": parsed.full_name, "skills_count": skills_count, "exp_count": exp_count, "proj_count": proj_count}
 
 
 # --- CV Upload Section ---
@@ -185,7 +215,7 @@ if uploaded is not None and st.button("Parse & Save from CV", type="primary"):
     if "error" in result:
         st.error(result["error"])
     else:
-        st.success(f"Profile created from CV: {result['full_name']} - {result['skills_count']} skills, {result['exp_count']} experiences")
+        st.success(f"Profile created from CV: {result['full_name']} - {result['skills_count']} skills, {result.get('proj_count', 0)} projects, {result['exp_count']} experiences")
         st.balloons()
 
 st.divider()
@@ -203,7 +233,44 @@ phone = st.text_input("Phone")
 user_location = st.text_input("Location (e.g. San Francisco, CA)")
 linkedin_url = st.text_input("LinkedIn URL")
 github_url = st.text_input("GitHub URL")
+
+st.subheader("Preferences")
+col_pref1, col_pref2 = st.columns(2)
+salary_min = col_pref1.number_input(
+    "Minimum Salary (annual)",
+    min_value=0,
+    max_value=500000,
+    value=0,
+    step=5000,
+    key="salary_min",
+)
+salary_max = col_pref2.number_input(
+    "Maximum Salary (annual)",
+    min_value=0,
+    max_value=500000,
+    value=0,
+    step=5000,
+    key="salary_max",
+)
+remote_pref = st.selectbox(
+    "Remote Preference",
+    ["No preference", "Remote", "Hybrid", "Onsite"],
+    key="remote_pref",
+)
+visa_status = st.text_input(
+    "Visa Status (e.g. 'UK citizen', 'need sponsorship', or leave blank)",
+    key="visa_status",
+)
 summary = st.text_area("Professional Summary")
+
+# RemotePolicy stores lowercase enum values in the database.
+remote_map = {
+    "No preference": None,
+    "Remote": "remote",
+    "Hybrid": "hybrid",
+    "Onsite": "onsite",
+}
+remote_pref_value = remote_map.get(remote_pref)
 
 # --- Skills ---
 st.subheader("Skills")
@@ -284,7 +351,7 @@ if st.button("Save Profile", type="primary"):
             from jobhunter.infrastructure.db.unit_of_work import unit_of_work
             from jobhunter.infrastructure.db.models import (
                 UserProfile, Skill, WorkExperience, Education,
-                Application, MatchScore, ResumeVersion, CoverLetterVersion,
+                Application, MatchScore, ResumeVersion, CoverLetterVersion, Project,
             )
             from sqlalchemy import delete, select
 
@@ -299,6 +366,7 @@ if st.button("Save Profile", type="primary"):
                     await session.execute(delete(Skill).where(Skill.profile_id == pid))
                     await session.execute(delete(WorkExperience).where(WorkExperience.profile_id == pid))
                     await session.execute(delete(Education).where(Education.profile_id == pid))
+                    await session.execute(delete(Project).where(Project.profile_id == pid))
                 await session.execute(delete(UserProfile))
                 await session.flush()
 
@@ -311,6 +379,10 @@ if st.button("Save Profile", type="primary"):
                     summary=summary.strip() or None,
                     linkedin_url=linkedin_url.strip() or None,
                     github_url=github_url.strip() or None,
+                    salary_min=salary_min if salary_min > 0 else None,
+                    salary_max=salary_max if salary_max > 0 else None,
+                    remote_preference=remote_pref_value,
+                    visa_status=visa_status.strip() or None,
                 )
                 session.add(profile)
                 await session.flush()
@@ -347,3 +419,36 @@ if st.button("Save Profile", type="primary"):
             st.balloons()
         except Exception as e:
             st.error(f"Save failed: {e}")
+
+# --- Quick Preferences Update (doesn't wipe CV data) ---
+st.divider()
+st.subheader("Update Job Preferences Only")
+st.markdown("Update salary, remote, and visa without re-uploading your CV.")
+col_p1, col_p2 = st.columns(2)
+pref_salary_min = col_p1.number_input("Minimum Salary (annual)", min_value=0, max_value=500000, value=0, step=5000, key="pref_sal_min")
+pref_salary_max = col_p2.number_input("Maximum Salary (annual)", min_value=0, max_value=500000, value=0, step=5000, key="pref_sal_max")
+pref_remote = st.selectbox("Remote Preference", ["No preference", "Remote", "Hybrid", "Onsite"], key="pref_remote")
+pref_visa = st.text_input("Visa Status (e.g. UK citizen, need sponsorship)", key="pref_visa")
+
+if st.button("Save Preferences", key="save_prefs"):
+    async def update_prefs():
+        from jobhunter.infrastructure.db.unit_of_work import unit_of_work
+        from jobhunter.infrastructure.db.models import UserProfile
+        from sqlalchemy import select, update
+        remote_map = {"No preference": None, "Remote": "REMOTE", "Hybrid": "HYBRID", "Onsite": "ONSITE"}
+        async with unit_of_work() as session:
+            stmt = update(UserProfile).values(
+                salary_min=pref_salary_min if pref_salary_min > 0 else None,
+                salary_max=pref_salary_max if pref_salary_max > 0 else None,
+                remote_preference=remote_map.get(pref_remote),
+                visa_status=pref_visa.strip() or None,
+            )
+            await session.execute(stmt)
+            await session.flush()
+            return True
+    try:
+        _run_async(update_prefs())
+        st.success("Preferences saved! Your existing skills and projects are unchanged.")
+    except Exception as exc:
+        st.error(f"Save failed: {type(exc).__name__}")
+

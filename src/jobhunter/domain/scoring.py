@@ -44,16 +44,16 @@ class ScoreComponents(BaseModel):
 class WeightConfig(BaseModel):
     """Configurable weights per component — defaults sum to 1.0."""
 
-    skills: float = 0.20
+    skills: float = 0.25
     experience: float = 0.15
     location: float = 0.05
-    salary: float = 0.10
-    visa: float = 0.05
+    salary: float = 0.05
+    visa: float = 0.03
     remote: float = 0.10
-    tech_stack: float = 0.15
+    tech_stack: float = 0.25
     industry: float = 0.05
-    culture: float = 0.05
-    growth: float = 0.10
+    culture: float = 0.02
+    growth: float = 0.05
 
     @model_validator(mode="after")
     def weights_sum_to_one(self) -> Self:

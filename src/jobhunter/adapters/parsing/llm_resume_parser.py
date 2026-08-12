@@ -41,16 +41,35 @@ def _normalize_parsed_fields(raw: dict) -> dict:
             d["phone"] = contact["phone"]
         if "location" not in d and "location" in contact:
             d["location"] = contact["location"]
+        # Extract github/linkedin from contact if not already found
+        for key in ("github", "github_url", "githubUrl"):
+            if key in contact and "github_url" not in d:
+                url = contact[key]
+                if url and not url.startswith("http"):
+                    url = "https://" + url
+                d["github_url"] = url
+        for key in ("linkedin", "linkedin_url", "linkedinUrl"):
+            if key in contact and "linkedin_url" not in d:
+                url = contact[key]
+                if url and not url.startswith("http"):
+                    url = "https://" + url
+                d["linkedin_url"] = url
 
     # Profiles/links (may be nested)
     profiles = d.pop("profiles", {}) or {}
     if isinstance(profiles, dict):
         for key in ("github", "github_url", "githubUrl"):
             if key in profiles and "github_url" not in d:
-                d["github_url"] = profiles[key]
+                url = profiles[key]
+                if url and not url.startswith("http"):
+                    url = "https://" + url
+                d["github_url"] = url
         for key in ("linkedin", "linkedin_url", "linkedinUrl"):
             if key in profiles and "linkedin_url" not in d:
-                d["linkedin_url"] = profiles[key]
+                url = profiles[key]
+                if url and not url.startswith("http"):
+                    url = "https://" + url
+                d["linkedin_url"] = url
         for key in ("website", "website_url", "websiteUrl"):
             if key in profiles and "website_url" not in d:
                 d["website_url"] = profiles[key]
@@ -85,6 +104,27 @@ def _normalize_parsed_fields(raw: dict) -> dict:
             if "project" in key.lower():
                 d["projects"] = d.pop(key)
                 break
+    # Normalize project sub-objects
+    if "projects" in d and isinstance(d["projects"], list):
+        for proj in d["projects"]:
+            if isinstance(proj, dict):
+                # github/link -> url
+                if "url" not in proj:
+                    for url_key in ("github", "link", "repo", "github_url", "repo_url"):
+                        if url_key in proj:
+                            url = proj.pop(url_key)
+                            if url and not str(url).startswith("http"):
+                                url = "https://" + str(url)
+                            proj["url"] = url
+                            break
+                # title -> name
+                if "name" not in proj and "title" in proj:
+                    proj["name"] = proj.pop("title")
+                # tech_stack -> technologies
+                if "technologies" not in proj and "tech_stack" in proj:
+                    proj["technologies"] = proj.pop("tech_stack")
+    elif "projects" in d and isinstance(d["projects"], dict):
+        d["projects"] = [d["projects"]]
 
     # Summary (aggressive fuzzy match)
     if "summary" not in d:
@@ -121,11 +161,43 @@ def _normalize_parsed_fields(raw: dict) -> dict:
             if key in d:
                 d["work_experiences"] = d.pop(key)
                 break
+    # Wrap single work experience dict in a list
+    if "work_experiences" in d and isinstance(d["work_experiences"], dict):
+        d["work_experiences"] = [d["work_experiences"]]
     if "work_experiences" in d and isinstance(d["work_experiences"], list):
         for exp in d["work_experiences"]:
             if isinstance(exp, dict):
-                if "company" in exp and "company_name" not in exp:
-                    exp["company_name"] = exp.pop("company")
+                # company variations -> company_name
+                if "company_name" not in exp:
+                    for k in ("company", "employer", "organization", "companyName"):
+                        if k in exp:
+                            exp["company_name"] = exp.pop(k)
+                            break
+                if "company_name" not in exp:
+                    exp["company_name"] = "Unknown"
+                # title variations -> title
+                if "title" not in exp:
+                    for k in ("jobTitle", "job_title", "role", "position", "designation"):
+                        if k in exp:
+                            exp["title"] = exp.pop(k)
+                            break
+                if "title" not in exp:
+                    exp["title"] = "Unknown Role"
+                # start_date: default if missing
+                if "start_date" not in exp:
+                    for k in ("startDate", "start", "from", "fromDate"):
+                        if k in exp:
+                            exp["start_date"] = exp.pop(k)
+                            break
+                if "start_date" not in exp:
+                    exp["start_date"] = "2020-01-01"
+                # end_date variations
+                if "end_date" not in exp:
+                    for k in ("endDate", "end", "to", "toDate"):
+                        if k in exp:
+                            exp["end_date"] = exp.pop(k)
+                            break
+                # is_current default
                 if "is_current" not in exp:
                     exp["is_current"] = False
 
@@ -182,6 +254,24 @@ def _normalize_parsed_fields(raw: dict) -> dict:
         for key in ("confidenceMap", "confidence_map"):
             if key in d:
                 d["confidence"] = d.pop(key)
+                break
+
+    # Top-level github/linkedin (Groq sometimes puts them here, not in contact/profiles)
+    if "github_url" not in d:
+        for key in ("github", "githubUrl", "github_url"):
+            if key in d:
+                url = d.pop(key)
+                if url and not str(url).startswith("http"):
+                    url = "https://" + str(url)
+                d["github_url"] = url
+                break
+    if "linkedin_url" not in d:
+        for key in ("linkedin", "linkedinUrl", "linkedin_url"):
+            if key in d:
+                url = d.pop(key)
+                if url and not str(url).startswith("http"):
+                    url = "https://" + str(url)
+                d["linkedin_url"] = url
                 break
 
     return d
