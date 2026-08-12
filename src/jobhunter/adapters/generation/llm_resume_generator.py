@@ -115,6 +115,17 @@ def _render_profile_for_prompt(profile: UserProfile) -> str:
                     parts.append(f"    - {a}")
             if exp.technologies:
                 parts.append(f"    Technologies: {', '.join(exp.technologies)}")
+    elif profile.projects:
+        # No traditional work experience — promote projects as experience
+        parts.append("\nProject Experience (in lieu of traditional employment):")
+        for proj in profile.projects:
+            parts.append(f"  {proj.name}")
+            if proj.description:
+                parts.append(f"    {proj.description}")
+            if proj.url:
+                parts.append(f"    Link: {proj.url}")
+            if proj.technologies:
+                parts.append(f"    Technologies: {', '.join(proj.technologies)}")
 
     if profile.educations:
         parts.append("\nEducation:")
