@@ -84,8 +84,9 @@ def generate_resume_pdf(resume_json: dict) -> bytes:
         elements.append(Paragraph('PROFESSIONAL SUMMARY', section_style))
         elements.append(Paragraph(str(summary), body_style))
 
-    # Experience
+    # Experience (or Projects if no traditional experience)
     experiences = resume_json.get('experiences', [])
+    projects_as_exp = resume_json.get('projects', []) if not experiences else []
     if experiences:
         elements.append(Paragraph('EXPERIENCE', section_style))
         for exp in experiences:
@@ -99,6 +100,23 @@ def generate_resume_pdf(resume_json: dict) -> bytes:
                     elements.append(Paragraph(
                         f"• {bullet}", bullet_style
                     ))
+
+    # Projects as Experience (when no traditional employment)
+    if projects_as_exp:
+        elements.append(Paragraph('PROJECT EXPERIENCE', section_style))
+        for proj in projects_as_exp:
+            if isinstance(proj, dict):
+                name = proj.get('name', '')
+                desc = proj.get('description', '')
+                url = proj.get('url', '')
+                tech = proj.get('technologies', [])
+                elements.append(Paragraph(f"<b>{name}</b>", job_title_style))
+                if desc:
+                    elements.append(Paragraph(str(desc), body_style))
+                if url:
+                    elements.append(Paragraph(f"Link: {url}", contact_style))
+                if tech and isinstance(tech, list):
+                    elements.append(Paragraph(f"<i>Technologies: {', '.join(str(t) for t in tech)}</i>", contact_style))
 
     # Education
     education = resume_json.get('education', [])

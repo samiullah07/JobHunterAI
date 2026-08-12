@@ -1,8 +1,6 @@
 .venv/
 __pycache__/
 *.py[cod]
-.env
-.env.*
 !.env.example
 .pytest_cache/
 .mypy_cache/
@@ -21,6 +19,6 @@ screenshots/
 *.log
 .DS_Store
 .idea/
-.vscode/
 .claude/
 Sami_Ullah_CV.docx
+config.bat
